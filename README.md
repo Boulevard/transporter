@@ -155,11 +155,14 @@ type Client = {
 };
 ```
 
-A client is connected to a server. The client is able to link to services provided by the server.
+A client is connected to a host. A client is able to link to services provided by a server running on the host.
 
 ##### Example
 
 ```typescript
+import { createSession as createBrowserSession } from "@boulevard/transporter/browser";
+import { createSession as createWorkerSession } from "@boulevard/transporter/worker";
+
 const browserSession = createBrowserSession({
   origin: "https://trusted.com",
   window: self.parent,
@@ -167,8 +170,13 @@ const browserSession = createBrowserSession({
 
 const workerSession = createWorkerSession(new Worker("crypto.0beec7b.js"));
 
-type Auth = { login(userName: string, password: string): { apiToken: string } };
-type Crypto = { encrypt(value: string): string };
+type Auth = {
+  login(userName: string, password: string): { apiToken: string };
+};
+
+type Crypto = {
+  encrypt(value: string): string;
+};
 
 const auth = browserSession.link<Auth>("blvd:auth");
 const crypto = workerSession.link<Crypto>("blvd:crypto");
@@ -189,10 +197,7 @@ A remote service is a group of remote functions or observables. It is a service 
 #### `Router`
 
 ```typescript
-type Router = {
-  path: string;
-  provide: Service;
-}[];
+type Router = { path: string; provide: Service }[];
 ```
 
 A router is a data structure for mapping paths to services.
@@ -287,7 +292,7 @@ If a value cannot be serialized, such as a function, the value is proxied. Howev
 
 ### Composing React Apps
 
-Transporter can be used to easily compose React applications in iframes or React Native Webviews. Here is an example app that has a reusable `<MicroApp />` component that renders a React app that exports a `render` method inside an iframe.
+Transporter can be used to easily compose React applications in iframes or React Native Webviews. Here is an example app that has a reusable `<MicroApp />` component that renders a React app that provides an app service with a `render` method inside an iframe.
 
 ```tsx
 import { createSession } from "@boulevard/transporter/browser";
@@ -340,10 +345,13 @@ const App = ({ count, increment }) => (
 );
 
 const Root = createRoot(document.getElementById("root"));
-const app = { render: (props) => Root.render(<App {...props} />) };
+
+const app = createService({
+  render: (props) => Root.render(<App {...props} />),
+});
 
 createServer({
-  router: [{ path: "app", provide: createService(app) }],
+  router: [{ path: "app", provide: app }],
   scheme: "counter",
   sessionManagers: [createSessionManager()],
 });
