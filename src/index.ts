@@ -93,9 +93,9 @@ export type RemoteService<T extends ServiceAPI> = {
   [key in keyof T]: RemoteValue<T[key]>;
 };
 
-export type Route = { readonly path: string; readonly service: Service };
+export type Route = { readonly path: string; readonly provide: Service };
 export type Router = readonly Route[];
-export type Server = { disconnect(): void };
+export type Server = { stop(): void };
 
 export type Service = {
   [name: string]: ObservableLike<Transportable> | TransportableFunction;
@@ -195,7 +195,7 @@ export function createServer({
   timeout?: number;
 }): Server {
   const connections = sessionManagers.map((sessionManager) =>
-    router.map(({ path, service }) => {
+    router.map(({ path, provide: service }) => {
       const matches = (uri: string): boolean => {
         const [uriScheme, uriPath = ""] = uri.split(":");
 
@@ -278,8 +278,7 @@ export function createServer({
   );
 
   return {
-    disconnect: () =>
-      flatten(connections).forEach((disconnect) => disconnect()),
+    stop: () => flatten(connections).forEach((disconnect) => disconnect()),
   };
 }
 
@@ -459,7 +458,7 @@ function encode({
         const scheme = generateId();
 
         createServer({
-          router: [{ path: "/", service: createService({ default: value }) }],
+          router: [{ path: "/", provide: createService({ default: value }) }],
           scheme,
           sessionManagers: [{ connect: Observable.of(port) }],
           timeout,

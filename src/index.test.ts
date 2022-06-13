@@ -440,7 +440,7 @@ describe("transporter", () => {
     const scheme = "test";
 
     createServer({
-      router: [{ path: "/", service: createService({ default: "a" }) }],
+      router: [{ path: "/", provide: createService({ default: "a" }) }],
       scheme,
       sessionManagers: [createSessionManager(p1)],
     });
@@ -474,7 +474,7 @@ describe("transporter", () => {
     const spy = jest.spyOn(p1, "send");
 
     createServer({
-      router: [{ path: "/", service: createService({ default: "a" }) }],
+      router: [{ path: "/", provide: createService({ default: "a" }) }],
       scheme: "a",
       sessionManagers: [createSessionManager(p1)],
     });
@@ -603,7 +603,7 @@ function createTestService<T extends ServiceAPI>({
   scheme?: string;
 }): RemoteService<T> {
   createServer({
-    router: [{ path, service: createService(api) }],
+    router: [{ path, provide: createService(api) }],
     scheme,
     sessionManagers: [createSessionManager(p1)],
   });

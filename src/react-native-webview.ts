@@ -24,6 +24,8 @@ type ReactNativeWebView = {
   postMessage(message: string): void;
 };
 
+// React Native WebView will send and receive messages from the document on
+// Android.
 const globalProxy = merge(
   fromEvent<MessageEvent>(self, "message"),
   fromEvent<MessageEvent>(document, "message")
