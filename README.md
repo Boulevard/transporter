@@ -18,7 +18,7 @@ Transporter is a framework for inter-process communication. The Transporter API 
 
 ## Introduction
 
-Transporter simplifies the implementation of inter-process communication. Its provides structure on top of primitive message passing that improves semantics, maintenance, and productivity so you can focus on code and not on boilerplate.
+Transporter simplifies the implementation of inter-process communication. It provides structure on top of primitive message passing that improves semantics, maintenance, and productivity so you can focus on code and not on boilerplate.
 
 Let's look at an example. Suppose we have a worker that contains some reusable math functions and we want to use those math functions in our application. First let's look at the worker code.
 
@@ -78,7 +78,7 @@ npm add @boulevard/transporter
 function createClient(from: { port: SessionPort; timeout?: number }): Client;
 ```
 
-Creates a client that is able to link services.
+Creates a client that is able to link to services.
 
 > You know my fourth rule? Never make a promise you can't keep. — Frank
 
@@ -95,9 +95,9 @@ function createServer(from: {
 }): Server;
 ```
 
-Creates a server that can manage client connections and route incoming requests to the correct service. Transporter is connection-oriented and transport agnostic. However, it requires a duplex transport layer to support observables and callback arguments.
+Creates a server that can manage client sessions and route incoming requests to the correct service. Transporter is connection-oriented and transport agnostic. However, a duplex transport is required to support observables and callback arguments.
 
-The scheme is similar to custom URL schemes on iOS and Android. The scheme acts as a namespace. It is used to disambiguate multiple servers running in the same host.
+The scheme is similar to custom URL schemes on iOS and Android. The scheme acts as a namespace. It is used to disambiguate multiple servers running on the same host.
 
 #### `createService`
 
@@ -155,7 +155,7 @@ type Client = {
 };
 ```
 
-A client represents a session with a server. The client is able to link to services provided by the server.
+A client is connected to a server. The client is able to link to services provided by the server.
 
 ##### Example
 
@@ -176,6 +176,27 @@ const crypto = workerSession.link<Crypto>("blvd:crypto");
 const { apiToken } = await auth.login("chow", await crypto.encrypt("bologna1"));
 ```
 
+#### `RemoteService`
+
+```typescript
+type RemoteService = {
+  [name: string]: ObservableLike<Transported> | TransportedFunction;
+};
+```
+
+A remote service is a group of remote functions or observables. It is a service but from a client's perspective. While a remote service looks like an object it does not have an object's prototype. You can think of it as an object with a `null` prototype. Notably the remote service's properties are not iterable.
+
+#### `Router`
+
+```typescript
+type Router = {
+  path: string;
+  provide: Service;
+}[];
+```
+
+A router is a data structure for mapping paths to services.
+
 #### `Server`
 
 ```typescript
@@ -194,7 +215,7 @@ export type Service = {
 };
 ```
 
-A service provides named functions or observables. In a way a service acts as a secondary router.
+A service is a group of functions or observables. A service can be thought of as a secondary router.
 
 #### `SessionManager`
 
@@ -223,7 +244,7 @@ createServer({
 The session manager factory functions provided by Transporter allow you to intercept the connection before it is created. This enables proxying the session port or rejecting the connection. To prevent the connection from being created return `null` from the `connect` function.
 
 ```typescript
-browserSessionManager({
+createBrowserSessionManager({
   ...,
   connect({ delegate, origin }) {
     return new URL(origin).hostname.endsWith("trusted.com") ? delegate() : null;
@@ -257,16 +278,6 @@ type Transportable =
 ```
 
 A transportable value may be transported between processes. If the value is serializable it will be cloned. If it is not serializable it will be proxied. If the return value of a function is a promise then the response will be sent once the promise settles.
-
-#### `RemoteValue`
-
-```typescript
-type RemoteValue =
-  | (...args: Transportable[]) => Promise<Transported>
-  | Observable<Transported>;
-```
-
-A remote value is a function or an observable.
 
 ## Memory Management
 
